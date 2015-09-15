@@ -1,25 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
-
-	<parent>
-		<artifactId>impl-parent</artifactId>
-		<groupId>org.cytoscape</groupId>
-		<version>3.3.0-SNAPSHOT</version>
-	</parent>
-
-	<properties>
-		<bundle.symbolicName>org.cytoscape.io.webservice-biomart-client-impl</bundle.symbolicName>
-		<bundle.namespace>org.cytoscape.io.webservice.biomart</bundle.namespace>
-	</properties>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>webservice-biomart-client-impl</artifactId>
+
+	<properties>
+		<bundle.symbolicName>org.cytoscape.io.webservice-biomart-client</bundle.symbolicName>
+		<bundle.namespace>org.cytoscape.io.webservice.biomart</bundle.namespace>
+
+		<cytoscape.api.version>3.3.0-SNAPSHOT</cytoscape.api.version>
+		<osgi.api.version>4.2.0</osgi.api.version>
+
+		<!-- Maven Plugin Settings -->
+		<junit.version>4.12</junit.version>
+		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+	</properties>
+
+	<groupId>org.cytoscape</groupId>
+	<artifactId>webservice-biomart-client</artifactId>
 	<version>3.3.0-SNAPSHOT</version>
-
-    <name>Cytoscape Biomart Webservice Impl (${project.artifactId})</name>
-
+	<name>Cytoscape Biomart Client (${project.artifactId})</name>
 	<packaging>bundle</packaging>
+
+	<distributionManagement>
+		<repository>
+			<id>releases</id>
+			<name>Internal Releases</name>
+			<url>http://code.cytoscape.org/nexus/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshots</id>
+			<name>Internal Snapshots</name>
+			<url>http://code.cytoscape.org/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<repositories>
 		<repository>
@@ -45,19 +60,26 @@
 			<url>http://code.cytoscape.org/nexus/content/repositories/releases/</url>
 		</repository>
 	</repositories>
+
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>${maven-jar-plugin.version}</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+					<encoding>UTF-8</encoding>
+					<optimize>true</optimize>
+					<showWarnings>true</showWarnings>
+					<showDeprecation>true</showDeprecation>
+					<compilerArguments>
+						<Xmaxwarns>10000</Xmaxwarns>
+						<Xmaxerrs>10000</Xmaxerrs>
+					</compilerArguments>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.felix</groupId>
@@ -71,7 +93,6 @@
 						<Export-Package>!${bundle.namespace}.*</Export-Package>
 						<Private-Package>${bundle.namespace}.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.CyActivator</Bundle-Activator>
-
 					</instructions>
 				</configuration>
 			</plugin>
@@ -79,43 +100,63 @@
 	</build>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.ops4j.pax.logging</groupId>
+			<artifactId>pax-logging-api</artifactId>
+			<version>1.5.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.api.version}</version>
+			<scope>provided</scope>
+		</dependency>
 
 		<!-- Cytoscape modules -->
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>webservice-swing-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>work-swing-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-util-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-application-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>core-task-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
-
 
 		<!-- Testing -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
+			<version>1.10.19</version>
 			<scope>test</scope>
 		</dependency>
-
 	</dependencies>
-
-
 </project>
