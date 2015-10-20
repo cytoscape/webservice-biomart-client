@@ -26,6 +26,7 @@ package org.cytoscape.io.webservice.biomart.ui;
 
 import static javax.swing.GroupLayout.DEFAULT_SIZE;
 import static javax.swing.GroupLayout.PREFERRED_SIZE;
+import static org.cytoscape.util.swing.LookAndFeelUtil.isAquaLAF;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -168,12 +169,14 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 		attrListPanel = new JPanel();
 		
 		selectAllButton = new JButton("Select All");
-		selectAllButton.putClientProperty("JButton.buttonType", "gradient"); // Mac OS X only
-		selectAllButton.putClientProperty("JComponent.sizeVariant", "small"); // Mac OS X only
-		
 		selectNoneButton = new JButton("Select None");
-		selectNoneButton.putClientProperty("JButton.buttonType", "gradient"); // Mac OS X only
-		selectNoneButton.putClientProperty("JComponent.sizeVariant", "small"); // Mac OS X only
+		
+		if (isAquaLAF()) {
+			selectAllButton.putClientProperty("JButton.buttonType", "gradient");
+			selectAllButton.putClientProperty("JComponent.sizeVariant", "small");
+			selectNoneButton.putClientProperty("JButton.buttonType", "gradient");
+			selectNoneButton.putClientProperty("JComponent.sizeVariant", "small");
+		}
 		
 		LookAndFeelUtil.equalizeSize(selectAllButton, selectNoneButton);
 		

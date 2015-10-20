@@ -34,6 +34,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
+import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -154,14 +155,20 @@ public class CheckBoxJList extends JList implements ListSelectionListener {
 			defaultComp.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
 			checkbox.setSelected(isSelected);
-			checkbox.setForeground(list.getForeground());
-			defaultComp.setForeground(list.getForeground());
+			
+			checkbox.setForeground(UIManager.getColor(isSelected ? "Table.selectionForeground" : "Table.foreground"));
+			checkbox.setBackground(UIManager.getColor(isSelected ? "Table.selectionBackground" : "Table.background"));
+			defaultComp.setForeground(UIManager.getColor(isSelected ? "Table.selectionForeground" : "Table.foreground"));
+			defaultComp.setBackground(UIManager.getColor(isSelected ? "Table.selectionBackground" : "Table.background"));
 
 			final Component[] comps = getComponents();
 			final int length = comps.length;
 
 			for (int i = 0; i < length; i++) {
-				comps[i].setBackground(list.getBackground());
+				comps[i].setBackground(
+						UIManager.getColor(isSelected ? "Table.selectionBackground" : "Table.background"));
+				comps[i].setForeground(
+						UIManager.getColor(isSelected ? "Table.selectionForeground" : "Table.foreground"));
 			}
 
 			return this;
