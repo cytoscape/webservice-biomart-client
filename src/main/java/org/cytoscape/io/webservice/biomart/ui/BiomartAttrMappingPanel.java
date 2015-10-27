@@ -56,11 +56,10 @@ import org.cytoscape.io.webservice.biomart.task.ShowBiomartDialogTask;
 import org.cytoscape.io.webservice.swing.WebServiceGUI;
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyTableManager;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
@@ -84,25 +83,15 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 		DATABASE, ATTRIBUTE, FILTER;
 	}
 
-	private final DialogTaskManager taskManager;
-	private final CyApplicationManager appManager;
-
 	private BiomartClient client;
 
 	private int globalTableCounter;
-
-	private boolean initialized = false;
+	private boolean initialized;
 
 	private WebServiceGUI webServiceGUI;
 
-	public BiomartAttrMappingPanel(final DialogTaskManager taskManager, final CyApplicationManager appManager,
-			final CyTableManager tblManager, final CyNetworkManager netManager, WebServiceGUI webServiceGUI) {
-		super(tblManager, netManager, LOGO, null, "Import Settings");
-
-		this.taskManager = taskManager;
-		this.appManager = appManager;
-		this.globalTableCounter = 0;
-		
+	public BiomartAttrMappingPanel(final WebServiceGUI webServiceGUI, final CyServiceRegistrar serviceRegistrar) {
+		super(LOGO, null, "Import Settings", serviceRegistrar);
 		this.webServiceGUI = webServiceGUI;
 	}
 
@@ -132,16 +121,18 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 		ShowBiomartDialogTask showDialogTask = new ShowBiomartDialogTask(this, firstTask);
 
 		Window parentWindow = webServiceGUI.getWindow(TableImportWebServiceClient.class);
+		
+		final DialogTaskManager taskManager = serviceRegistrar.getService(DialogTaskManager.class);
 		taskManager.setExecutionContext(parentWindow);
 		taskManager.execute(new TaskIterator(firstTask, showDialogTask));
 		initialized = true;
 	}
 
 	public void initDataSources(LoadRepositoryResult res) {
-		attributeMap = new HashMap<String, Map<String, String[]>>();
-		attributeListOrder = new HashMap<String, List<String>>();
-		filterMap = new HashMap<String, Map<String, String>>();
-		attrNameMap = new HashMap<String, Map<String, String>>();
+		attributeMap = new HashMap<>();
+		attributeListOrder = new HashMap<>();
+		filterMap = new HashMap<>();
+		attrNameMap = new HashMap<>();
 
 		// Import list of repositories.
 		setMartServiceList(res);
@@ -149,16 +140,17 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 
 	public void setMartServiceList(LoadRepositoryResult res) {
 		databaseComboBox.removeAllItems();
-		
-		this.datasourceMap = res.getDatasourceMap();
+		datasourceMap = res.getDatasourceMap();
 		final List<String> dsList = res.getSortedDataSourceList();
+		
 		for (String ds : dsList)
-			this.databaseComboBox.addItem(ds);		
+			databaseComboBox.addItem(ds);		
 	}
 
 	public void loadFilter() {
 		Object selected = databaseComboBox.getSelectedItem();
-		if(selected == null)
+		
+		if (selected == null)
 			return;
 		
 		attributeTypeComboBox.removeAllItems();
@@ -213,6 +205,7 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 	}
 
 	private void fetchData(final String datasourceName, final SourceType type) {
+		final DialogTaskManager taskManager = serviceRegistrar.getService(DialogTaskManager.class);
 		taskManager.setExecutionContext(null);
 
 		if (type.equals(SourceType.ATTRIBUTE)) {
@@ -243,15 +236,15 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 		// nodes = Cytoscape.getCurrentNetwork().nodesList();
 		// }
 
-		final CyNetwork curNetwork = appManager.getCurrentNetwork();
+		final CyApplicationManager applicationManager = serviceRegistrar.getService(CyApplicationManager.class);
+		final CyNetwork curNetwork = applicationManager.getCurrentNetwork();
 		final List<CyNode> nodes = curNetwork.getNodeList();
 
 		final StringBuilder builder = new StringBuilder();
-
 		final CyTable defTable = curNetwork.getDefaultNodeTable();
-
 		final CyColumn column = defTable.getColumn(keyAttrName);
 		final Class<?> attrDataType = column.getType();
+		
 		for (CyNode node : nodes) {
 			final CyRow row = defTable.getRow(node.getSUID());
 
@@ -281,6 +274,8 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 		if (query != null) {
 			TaskIterator ti = client.createTaskIterator(query);
 			ti.append(new ResetAttributesTask());
+			
+			final DialogTaskManager taskManager = serviceRegistrar.getService(DialogTaskManager.class);
 			taskManager.execute(ti);
 		}
 	}
@@ -302,8 +297,8 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 		dataset = new Dataset(datasource);
 		// System.out.println("Target Dataset = " + dataset.getName());
 
-		final Object[] selectedAttr = attrCheckboxList.getSelectedValues();
-		attrs = new Attribute[selectedAttr.length + 1];
+		final List<?> selectedAttr = attrCheckboxList.getSelectedValuesList();
+		attrs = new Attribute[selectedAttr.size() + 1];
 
 		// This is the mapping key
 		String filterName = fMap.get(attributeTypeComboBox.getSelectedItem());
@@ -326,13 +321,12 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 			attrs[0] = new Attribute(filterName);
 		}
 
-		for (int i = 1; i <= selectedAttr.length; i++) {
-			attrs[i] = new Attribute(attrMap.get(selectedAttr[i - 1]));
+		for (int i = 1; i <= selectedAttr.size(); i++) {
+			attrs[i] = new Attribute(attrMap.get(selectedAttr.get(i - 1)));
 		}
 
 		// For name mapping, just use ID list filter for query.
 		filters = new Filter[1];
-
 		filters[0] = new Filter(filterName, getIDFilterString(keyAttrName));
 
 		String keyInHeader = null;
@@ -420,21 +414,23 @@ public class BiomartAttrMappingPanel extends AttributeImportPanel {
 
 		@Override
 		public void run(TaskMonitor taskMonitor) throws Exception {
-
-			Map<String, String> returnValMap;
 			final String selectedDB = databaseComboBox.getSelectedItem().toString();
 			final String selectedDBName = datasourceMap.get(selectedDB);
 
-			returnValMap = firstTask.getFilters();
+			Map<String, String> returnValMap = firstTask.getFilters();
 			filterMap.put(selectedDBName, returnValMap);
 
-			List<String> filterNames = new ArrayList<String>(returnValMap.keySet());
+			final List<String> filterNames = new ArrayList<>(returnValMap.keySet());
 			Collections.sort(filterNames);
 
-			for (String filter : filterNames)
-				attributeTypeComboBox.addItem(filter);
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					for (String filter : filterNames)
+						attributeTypeComboBox.addItem(filter);
+				}
+			});
 		}
-
 	}
 	
 	private final class ResetAttributesTask extends AbstractTask {

@@ -26,46 +26,39 @@ package org.cytoscape.io.webservice.biomart;
 
 import java.util.Properties;
 
-import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.io.webservice.biomart.rest.BiomartRestClient;
 import org.cytoscape.io.webservice.biomart.ui.BiomartAttrMappingPanel;
 import org.cytoscape.io.webservice.swing.WebServiceGUI;
-import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.edit.ImportDataTableTaskFactory;
-import org.cytoscape.work.swing.DialogTaskManager;
 import org.osgi.framework.BundleContext;
 
 
 public class CyActivator extends AbstractCyActivator {
 	
-	public CyActivator() {
-		super();
-	}
-
 	@Override
 	public void start(BundleContext bc) {
 		// Import services
-		DialogTaskManager taskManagerServiceRef = getService(bc,DialogTaskManager.class);
-		CyNetworkManager cyNetworkManagerServiceRef = getService(bc,CyNetworkManager.class);
-		CyTableManager cyTableManagerServiceRef = getService(bc,CyTableManager.class);
-		CyApplicationManager cyApplicationManagerServiceRef = getService(bc,CyApplicationManager.class);
-		CyTableFactory cyTableFactoryServiceRef = getService(bc,CyTableFactory.class);
-		ImportDataTableTaskFactory importAttrTFServiceRef = getService(bc,ImportDataTableTaskFactory.class);
+		CyServiceRegistrar serviceRegistrar = getService(bc, CyServiceRegistrar.class);
+		CyTableManager cyTableManagerServiceRef = getService(bc, CyTableManager.class);
+		CyTableFactory cyTableFactoryServiceRef = getService(bc, CyTableFactory.class);
+		ImportDataTableTaskFactory importAttrTFServiceRef = getService(bc, ImportDataTableTaskFactory.class);
 
-		WebServiceGUI webServiceGUI = getService(bc,WebServiceGUI.class);
-		
+		WebServiceGUI webServiceGUI = getService(bc, WebServiceGUI.class);
+
 		// Export services
 		BiomartRestClient biomartRestClient = new BiomartRestClient("http://www.biomart.org/biomart/martservice");
-		BiomartAttrMappingPanel biomartAttrMappingPanel = new BiomartAttrMappingPanel(taskManagerServiceRef,cyApplicationManagerServiceRef,cyTableManagerServiceRef,cyNetworkManagerServiceRef, webServiceGUI);
-		
-		BiomartClient biomartClient = new BiomartClient("BioMart Client","REST version of BioMart Web Service Client.",biomartRestClient,cyTableFactoryServiceRef,cyTableManagerServiceRef, biomartAttrMappingPanel, importAttrTFServiceRef);
+		BiomartAttrMappingPanel biomartAttrMappingPanel = new BiomartAttrMappingPanel(webServiceGUI, serviceRegistrar);
+
+		BiomartClient biomartClient = new BiomartClient("BioMart Client", "REST version of BioMart Web Service Client.",
+				biomartRestClient, cyTableFactoryServiceRef, cyTableManagerServiceRef, biomartAttrMappingPanel,
+				importAttrTFServiceRef);
 		biomartAttrMappingPanel.setClient(biomartClient);
-		
-		registerAllServices(bc,biomartAttrMappingPanel, new Properties());
-		registerAllServices(bc,biomartClient, new Properties());
+
+		registerAllServices(bc, biomartAttrMappingPanel, new Properties());
+		registerAllServices(bc, biomartClient, new Properties());
 	}
 }
-

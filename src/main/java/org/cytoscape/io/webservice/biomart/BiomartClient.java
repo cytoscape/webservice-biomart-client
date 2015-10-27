@@ -42,7 +42,6 @@ import org.osgi.framework.ServiceException;
 
 /**
  * BioMart Web Service Client.
- * 
  */
 public class BiomartClient extends AbstractWebServiceGUIClient implements TableImportWebServiceClient {
 	
@@ -79,7 +78,6 @@ public class BiomartClient extends AbstractWebServiceGUIClient implements TableI
 	public BiomartRestClient getRestClient() {
 		return this.restClient;
 	}
-
 
 	@Override
 	public TaskIterator createTaskIterator(Object query) {

@@ -23,12 +23,10 @@ package org.cytoscape.io.webservice.biomart;
  * <http://www.gnu.org/licenses/lgpl-2.1.html>.
  * #L%
  */
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
-
-import javax.swing.plaf.synth.Region;
 
 import org.cytoscape.io.webservice.biomart.rest.BiomartRestClient;
 import org.junit.After;

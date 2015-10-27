@@ -1,5 +1,15 @@
 package org.cytoscape.io.webservice.biomart.task;
 
+import java.awt.Window;
+
+import javax.swing.SwingUtilities;
+
+import org.cytoscape.io.webservice.biomart.ui.BiomartAttrMappingPanel;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.TaskMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /*
  * #%L
  * Cytoscape Biomart Webservice Impl (webservice-biomart-client-impl)
@@ -24,14 +34,6 @@ package org.cytoscape.io.webservice.biomart.task;
  * #L%
  */
 
-import javax.swing.JDialog;
-
-import org.cytoscape.io.webservice.biomart.ui.BiomartAttrMappingPanel;
-import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.TaskMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class ShowBiomartDialogTask extends AbstractTask {
 
 	private static final Logger logger = LoggerFactory.getLogger(ShowBiomartDialogTask.class);
@@ -47,8 +49,14 @@ public class ShowBiomartDialogTask extends AbstractTask {
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {
 		final LoadRepositoryResult result = loadTask.getResult();
-		panel.initDataSources(result);
-		logger.info("BioMart Client initialized.");
-		((JDialog)panel.getRootPane().getParent()).toFront();
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				panel.initDataSources(result);
+				logger.info("BioMart Client initialized.");
+				((Window)panel.getRootPane().getParent()).toFront();
+			}
+		});
 	}
 }

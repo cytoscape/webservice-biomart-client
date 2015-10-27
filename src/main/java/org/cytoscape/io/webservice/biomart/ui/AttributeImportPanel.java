@@ -28,6 +28,8 @@ import static javax.swing.GroupLayout.DEFAULT_SIZE;
 import static javax.swing.GroupLayout.PREFERRED_SIZE;
 import static org.cytoscape.util.swing.LookAndFeelUtil.isAquaLAF;
 
+import java.awt.Component;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ContainerEvent;
@@ -38,20 +40,21 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.swing.AbstractAction;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 import org.cytoscape.application.events.SetCurrentNetworkEvent;
 import org.cytoscape.application.events.SetCurrentNetworkListener;
@@ -59,12 +62,13 @@ import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.events.ColumnCreatedEvent;
 import org.cytoscape.model.events.ColumnCreatedListener;
 import org.cytoscape.model.events.ColumnDeletedEvent;
 import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.subnetwork.CyRootNetwork;
+import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.util.swing.IconManager;
 import org.cytoscape.util.swing.LookAndFeelUtil;
 
 /**
@@ -74,21 +78,18 @@ import org.cytoscape.util.swing.LookAndFeelUtil;
  * This UI accepts title and icon. Usually, those are from source database.
  * 
  * TODO: is this the right place for this class?
- * 
  */
+@SuppressWarnings("serial")
 public abstract class AttributeImportPanel extends JPanel implements ColumnCreatedListener, ColumnDeletedListener,
 		SetCurrentNetworkListener {
 
-	private static final long serialVersionUID = 8665197023334496167L;
-
-	// Swing components. Maybe accessed from child classes.
-	protected JComboBox columnNameComboBox;
+	protected JComboBox<String> columnNameComboBox;
 	protected JLabel attributeLabel;
 	protected JPanel attributePanel;
-	protected JComboBox attributeTypeComboBox;
+	protected JComboBox<String> attributeTypeComboBox;
 	protected JLabel attributeTypeLabel;
 	protected JButton cancelButton;
-	protected JComboBox databaseComboBox;
+	protected JComboBox<String> databaseComboBox;
 	protected JPanel databasePanel;
 	protected JPanel attrListPanel;
 	protected JPanel availableAttrPanel;
@@ -102,27 +103,20 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 
 	protected DefaultListModel attrCheckboxListModel;
 
-	// Title of the panel.
 	protected String panelTitle;
-
-	// Icon for this panel title.
 	protected Icon logo;
-
-	// Attribute panel border title
 	protected String attributePanelTitle;
 
-	protected final CyTableManager tblManager;
-	private final CyNetworkManager netManager;
-	
 	private boolean defKeyStrokesAdded;
+	
+	protected final CyServiceRegistrar serviceRegistrar;
 
-	protected AttributeImportPanel(final CyTableManager tblManager, final CyNetworkManager netManager, Icon logo,
-			String title, String attrPanelTitle) {
+	protected AttributeImportPanel(Icon logo, String title, String attrPanelTitle,
+			final CyServiceRegistrar serviceRegistrar) {
 		this.logo = logo;
 		this.panelTitle = title;
 		this.attributePanelTitle = attrPanelTitle;
-		this.tblManager = tblManager;
-		this.netManager = netManager;
+		this.serviceRegistrar = serviceRegistrar;
 
 		initComponents();
 
@@ -158,12 +152,12 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 		titleLabel.setIcon(logo);
 		
 		databasePanel = new JPanel();
-		databaseComboBox = new JComboBox();
+		databaseComboBox = new JComboBox<>();
 		attributePanel = new JPanel();
 		attributeLabel = new JLabel("Column:");
-		columnNameComboBox = new JComboBox();
+		columnNameComboBox = new JComboBox<>();
 		attributeTypeLabel = new JLabel("Data Type:");
-		attributeTypeComboBox = new JComboBox();
+		attributeTypeComboBox = new JComboBox<>();
 		availableAttrPanel = new JPanel();
 		availableAttrScrollPane = new JScrollPane();
 		attrListPanel = new JPanel();
@@ -180,7 +174,10 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 		
 		LookAndFeelUtil.equalizeSize(selectAllButton, selectNoneButton);
 		
-		refreshButton = new JButton("...");
+		IconManager iconManager = serviceRegistrar.getService(IconManager.class);
+		
+		refreshButton = new JButton(IconManager.ICON_ELLIPSIS_H);
+		refreshButton.setFont(iconManager.getIconFont(14.0f));
 		refreshButton.setToolTipText("Select Services...");
 		
 		databasePanel.setBorder(LookAndFeelUtil.createTitledBorder("Service"));
@@ -189,6 +186,15 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 			@Override
 			public void actionPerformed(ActionEvent evt) {
 				databaseComboBoxActionPerformed(evt);
+			}
+		});
+		databaseComboBox.setRenderer(new DefaultListCellRenderer() {
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+					boolean cellHasFocus) {
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				this.setToolTipText(value != null ? value.toString() : null);
+				return this;
 			}
 		});
 		
@@ -205,22 +211,15 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 		databasePanelLayout.setAutoCreateGaps(true);
 		
 		databasePanelLayout.setHorizontalGroup(databasePanelLayout.createSequentialGroup()
-				.addComponent(databaseComboBox, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+				.addComponent(databaseComboBox, 200, 700, Short.MAX_VALUE)
 				.addComponent(refreshButton, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
 		);
-		databasePanelLayout.setVerticalGroup(databasePanelLayout.createParallelGroup(Alignment.CENTER, true)
+		databasePanelLayout.setVerticalGroup(databasePanelLayout.createParallelGroup(Alignment.CENTER, false)
 				.addComponent(databaseComboBox, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
 				.addComponent(refreshButton, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
 		);
 
 		attributePanel.setBorder(LookAndFeelUtil.createTitledBorder("Key Column in Cytoscape"));
-
-		attributeTypeComboBox.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent evt) {
-				attributeTypeComboBoxActionPerformed(evt);
-			}
-		});
 
 		GroupLayout attributePanelLayout = new GroupLayout(attributePanel);
 		attributePanel.setLayout(attributePanelLayout);
@@ -295,8 +294,8 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 		
 		layout.setHorizontalGroup(layout.createParallelGroup(Alignment.CENTER, true)
 				.addComponent(titleLabel)
-				.addComponent(databasePanel, DEFAULT_SIZE, 800, Short.MAX_VALUE)
-				.addComponent(attributePanel, DEFAULT_SIZE, 800, Short.MAX_VALUE)
+				.addComponent(databasePanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+				.addComponent(attributePanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
 				.addComponent(availableAttrPanel, DEFAULT_SIZE, 800, Short.MAX_VALUE)
 				.addComponent(buttonPanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
 		);
@@ -305,7 +304,7 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 				.addComponent(databasePanel, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
 				.addComponent(attributePanel, PREFERRED_SIZE, DEFAULT_SIZE,	PREFERRED_SIZE)
 				.addComponent(availableAttrPanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-				.addComponent(buttonPanel, PREFERRED_SIZE, DEFAULT_SIZE,	PREFERRED_SIZE)
+				.addComponent(buttonPanel, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
 		);
 		
 		this.addContainerListener(new ContainerListener() {
@@ -323,23 +322,22 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 	protected abstract void selectAllButtonActionPerformed(ActionEvent evt);
 	protected abstract void refreshButtonActionPerformed(ActionEvent evt);
 
-	private void attributeTypeComboBoxActionPerformed(ActionEvent evt) {
-		// TODO add your handling code here:
-	}
-
 	abstract protected void databaseComboBoxActionPerformed(ActionEvent evt);
 
 	protected abstract void importAttributes();
 
 	private void setAttributeComboBox() {
-		final Set<CyNetwork> networks = this.netManager.getNetworkSet();
+		final CyNetworkManager netManager = serviceRegistrar.getService(CyNetworkManager.class);
+		final Set<CyNetwork> networks = netManager.getNetworkSet();
 
 		for (CyNetwork network : networks) {
 			final CyTable nodeTable = network.getDefaultNodeTable();
 			final Collection<CyColumn> columns = nodeTable.getColumns();
+			
 			for (CyColumn col : columns)
 				columnNameComboBox.addItem(col.getName());
 		}
+		
 		columnNameComboBox.setSelectedItem(CyRootNetwork.SHARED_NAME);
 	}
 
@@ -371,10 +369,13 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 	}
 
 	private boolean validTable(CyTable t) {
+		final CyNetworkManager netManager = serviceRegistrar.getService(CyNetworkManager.class);
+		
 		for (CyNetwork network : netManager.getNetworkSet()) {
 			if (t.equals(network.getDefaultNodeTable()))
 				return true;
 		}
+		
 		return false;
 	}
 
@@ -411,14 +412,13 @@ public abstract class AttributeImportPanel extends JPanel implements ColumnCreat
 		});
 	}
 	
-	@SuppressWarnings("serial")
 	private JButton getCancelButton() {
 		if (cancelButton == null) {
 			cancelButton = new JButton(new AbstractAction("Cancel") {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					// Close parent
-					final JDialog container = (JDialog) getRootPane().getParent();
+					final Window container = (Window) getRootPane().getParent();
 					container.setVisible(false);
 				}
 			});

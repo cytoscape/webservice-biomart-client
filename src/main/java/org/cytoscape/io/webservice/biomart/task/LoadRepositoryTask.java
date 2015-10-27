@@ -46,8 +46,7 @@ import org.xml.sax.SAXException;
 
 public class LoadRepositoryTask extends AbstractTask {
 
-	private static final Logger logger = LoggerFactory
-			.getLogger(LoadRepositoryTask.class);
+	private static final Logger logger = LoggerFactory.getLogger(LoadRepositoryTask.class);
 
 	private final BiomartRestClient client;
 
@@ -57,7 +56,7 @@ public class LoadRepositoryTask extends AbstractTask {
 	private LoadRepositoryResult result;
 
 	// These databases are not compatible with this UI.
-	private static final List<String> databaseFilter = new ArrayList<String>();
+	private static final List<String> databaseFilter = new ArrayList<>();
 
 	static {
 		// Database on this list will not appear on the list.
@@ -70,12 +69,12 @@ public class LoadRepositoryTask extends AbstractTask {
 	private Map<String, String> datasourceMap;
 	private List<String> dsList;
 	
-	@Tunable(description="Please select services you want to use:")
+	@Tunable(description="")
 	public ListMultipleSelection<String> services;
 
 	public LoadRepositoryTask(final BiomartRestClient client) {
 		this.client = client;
-		this.name2DatasourceMap = new HashMap<String, String>();
+		this.name2DatasourceMap = new HashMap<>();
 		try {
 			initServiceList();
 		} catch (Exception e) {
@@ -87,29 +86,27 @@ public class LoadRepositoryTask extends AbstractTask {
 		reg = client.getRegistry();
 		
 		for (String databaseName : reg.keySet()) {
-
 			final Map<String, String> detail = reg.get(databaseName);
-			if (detail.get("visible").equals("1")
-					&& (databaseFilter.contains(databaseName) == false)) {
+			
+			if (detail.get("visible").equals("1") && (databaseFilter.contains(databaseName) == false)) {
 				String dispName = detail.get("displayName");
 				name2DatasourceMap.put(dispName, databaseName);
 			}
 		}
-		final TreeSet<String> sortedSet = new TreeSet<String>(name2DatasourceMap.keySet());
-		services = new ListMultipleSelection<String>(new ArrayList<String>(sortedSet));
+		
+		final TreeSet<String> sortedSet = new TreeSet<>(name2DatasourceMap.keySet());
+		services = new ListMultipleSelection<String>(new ArrayList<>(sortedSet));
 	}
-
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws IOException, ParserConfigurationException, SAXException {
-
 		final List<String> selected = services.getSelectedValues();
 		
 		taskMonitor.setTitle("Loading list of available BioMart Services.  Please wait...");
 		taskMonitor.setStatusMessage("Loading list of available Marts...");
 		
-		dsList = new ArrayList<String>();
-		datasourceMap = new HashMap<String, String>();
+		dsList = new ArrayList<>();
+		datasourceMap = new HashMap<>();
 
 		logger.debug("Loading Repository...");
 		
@@ -122,7 +119,6 @@ public class LoadRepositoryTask extends AbstractTask {
 		Map<String, String> datasources;
 
 		for (String databaseName : reg.keySet()) {
-
 			Map<String, String> detail = reg.get(databaseName);
 
 			// Add the datasource if its visible
