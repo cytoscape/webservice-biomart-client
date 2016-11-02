@@ -31,17 +31,26 @@ import org.cytoscape.io.webservice.biomart.ui.BiomartAttrMappingPanel;
 import org.cytoscape.io.webservice.swing.WebServiceGUI;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.property.CyProperty;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.edit.ImportDataTableTaskFactory;
 import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class CyActivator extends AbstractCyActivator {
+	private static final Logger logger = LoggerFactory.getLogger(BiomartRestClient.class);
+	
+	// Since central server is down, ENSEMBL Mart is the default.
+	private static final String MART_URL_PROP_NAME ="biomart.url";
+	private static final String DEF_MART ="http://www.ensembl.org/biomart/martservice";
 	
 	@Override
 	public void start(BundleContext bc) {
 		// Import services
+		CyProperty<Properties> cyProp = getService(bc,CyProperty.class,"(cyPropertyName=cytoscape3.props)");
 		CyServiceRegistrar serviceRegistrar = getService(bc, CyServiceRegistrar.class);
 		CyTableManager cyTableManagerServiceRef = getService(bc, CyTableManager.class);
 		CyTableFactory cyTableFactoryServiceRef = getService(bc, CyTableFactory.class);
@@ -50,7 +59,15 @@ public class CyActivator extends AbstractCyActivator {
 		WebServiceGUI webServiceGUI = getService(bc, WebServiceGUI.class);
 
 		// Export services
-		BiomartRestClient biomartRestClient = new BiomartRestClient("http://www.biomart.org/biomart/martservice");
+		String martUrl = cyProp.getProperties().getProperty(MART_URL_PROP_NAME);
+		if(martUrl == null || martUrl.equals("")) {
+			martUrl = DEF_MART;
+			cyProp.getProperties().setProperty(MART_URL_PROP_NAME, martUrl);
+		}
+		
+		logger.info("Biomart Service URL is: " + martUrl);
+		
+		BiomartRestClient biomartRestClient = new BiomartRestClient(martUrl);
 		BiomartAttrMappingPanel biomartAttrMappingPanel = new BiomartAttrMappingPanel(webServiceGUI, serviceRegistrar);
 
 		BiomartClient biomartClient = new BiomartClient("BioMart Client", "REST version of BioMart Web Service Client.",
