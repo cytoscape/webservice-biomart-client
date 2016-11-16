@@ -19,7 +19,7 @@
 
 	<groupId>org.cytoscape</groupId>
 	<artifactId>webservice-biomart-client</artifactId>
-	<version>3.3.1-SNAPSHOT</version>
+	<version>3.3.1</version>
 	<name>Biomart Web Service Client</name>
 	<packaging>bundle</packaging>
 
